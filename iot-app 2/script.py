@@ -7,16 +7,13 @@ from tensorflow import lite as tflite
 
 load_dotenv()
 
-# MQTT configurations
 detection_topic = 'serial-reader/data'
 mqtt_broker = 'localhost'
 mqtt_port = 1883
 
-# MQTT client setup
 mqtt_client = mqtt.Client()
 mqtt_client.username_pw_set('iot-application', 'iot-application')
 
-# Load the TF Lite model
 model_path = 'env_model.tflite'
 interpreter = tflite.Interpreter(model_path=model_path)
 interpreter.allocate_tensors()
@@ -39,21 +36,16 @@ def on_message(client, userdata, msg):
             input_data = np.array([[temperature, pressure, humidity]], dtype=np.float32)
             print("Received data:", temperature, pressure, humidity)
 
-            # Get input and output details of the model
             input_details = interpreter.get_input_details()
             output_details = interpreter.get_output_details()
 
-            # Set the input tensor
             interpreter.set_tensor(input_details[0]['index'], input_data)
 
-            # Perform inference
             interpreter.invoke()
 
-            # Get the prediction
             prediction = interpreter.get_tensor(output_details[0]['index'])[0][0]
             print("Prediction:", prediction)
 
-            # Determine the environment status
             if prediction >= 0.5:
                 detection_data = {"detected": "true"}
             else:
@@ -64,12 +56,10 @@ def on_message(client, userdata, msg):
     except Exception as e:
         print(f"Error processing message: {e}")
 
-# Assign MQTT client callbacks
 mqtt_client.on_connect = on_connect
 mqtt_client.on_message = on_message
 
 try:
-    # Connect to MQTT broker and start loop
     mqtt_client.connect(mqtt_broker, mqtt_port, 60)
     mqtt_client.loop_forever()
 
